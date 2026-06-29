@@ -1,5 +1,29 @@
 # Cafetron Hybrid UI Automation Framework
 
+
+## Smoke Test
+Smoke tests were selected for the most critical end-to-end flows that confirm 
+the application is stable enough for further testing. For example: login, basic 
+navigation, menu access, placing an order, payment, and logout.
+
+
+## sanity Test
+Sanity tests were selected for focused validation of recently changed or important areas. 
+These are quick checks to confirm that a specific module or fix is working as expected.
+
+## Regression Test
+Regression tests were selected for broader coverage of existing functionality 
+to make sure new changes did not break already working features. These include 
+positive, negative, edge case, and cross-module scenarios.
+
+
+
+
+
+
+
+
+
 Selenium Java + TestNG hybrid framework for Cafetron UI automation.
 
 This project is UI-only. It does not include API tests, backend validation, database checks, token checks, or localStorage assertions.
