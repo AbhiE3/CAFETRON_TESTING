@@ -2,9 +2,11 @@ package com.cafetron.pages;
 
 import com.cafetron.config.ConfigReader;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -41,7 +43,14 @@ public abstract class BasePage {
     }
 
     protected void click(By locator) {
-        waitForClickable(locator).click();
+        WebElement element = waitForClickable(locator);
+        ((JavascriptExecutor) driver)
+                .executeScript("arguments[0].scrollIntoView({block: 'center', inline: 'center'});", element);
+        try {
+            element.click();
+        } catch (WebDriverException exception) {
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+        }
     }
 
     protected void selectByValue(By locator, String value) {

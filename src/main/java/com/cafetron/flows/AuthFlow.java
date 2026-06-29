@@ -4,6 +4,7 @@ import com.cafetron.data.Role;
 import com.cafetron.data.TestDataFactory;
 import com.cafetron.data.TestUser;
 import com.cafetron.pages.LoginPage;
+import com.cafetron.pages.ProfilePage;
 import org.openqa.selenium.WebDriver;
 import org.testng.SkipException;
 
@@ -34,6 +35,13 @@ public class AuthFlow {
         } catch (RuntimeException ignored) {
             // Best-effort cleanup for tests that intentionally navigate across pages.
         }
+    }
+
+    public void logoutThroughProfile() {
+        ProfilePage profilePage = new ProfilePage(driver);
+        profilePage.open();
+        profilePage.logout();
+        new LoginPage(driver).waitForUrlContains("/login");
     }
 
     private TestUser configuredUser(Role role) {

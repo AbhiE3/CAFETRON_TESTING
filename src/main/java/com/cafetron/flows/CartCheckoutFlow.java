@@ -8,6 +8,7 @@ import org.testng.SkipException;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Locale;
 
 public class CartCheckoutFlow {
     private final WebDriver driver;
@@ -57,13 +58,18 @@ public class CartCheckoutFlow {
             // Some menu states do not expose search; continue with visible cards.
         }
 
+        WebElement itemCard = waitForExactMenuItemCard(itemName);
+        if (itemCard == null) {
+            return false;
+        }
 
-        String itemLiteral = xpathLiteral(itemName);
-        By namedItemAddButtons = By.xpath("//*[contains(normalize-space(.), " + itemLiteral + ")]" +
-                "/ancestor::*[self::article or contains(@id, 'menu-item') or contains(translate(@class, '" +
-                UPPERCASE + "', '" + LOWERCASE + "'), 'card')][1]//button[" + ADD_BUTTON_PREDICATE + "]");
-        waitForVisibleEnabledButton(namedItemAddButtons);
-        return clickFirstAddButtonAndConfirmCart(driver.findElements(namedItemAddButtons));
+        for (WebElement button : itemCard.findElements(By.xpath(".//button[" + ADD_BUTTON_PREDICATE + "]"))) {
+            if (isDisplayedAndEnabled(button)) {
+                clickAddButton(button);
+                return cartContainsItem(itemName);
+            }
+        }
+        return false;
     }
 
     private String xpathLiteral(String text) {
@@ -83,6 +89,29 @@ public class CartCheckoutFlow {
         }
         literal.append(")");
         return literal.toString();
+    }
+
+    private WebElement waitForExactMenuItemCard(String itemName) {
+        By cardLocator = By.xpath("//*[self::article or starts-with(@id, 'menu-item-card-') "
+                + "or contains(concat(' ', normalize-space(@class), ' '), ' menu-card ')]"
+                + "[.//*[normalize-space(.) = " + xpathLiteral(itemName) + "] "
+                + "or normalize-space(.) = " + xpathLiteral(itemName) + "]");
+        try {
+            return new org.openqa.selenium.support.ui.WebDriverWait(driver, Duration.ofSeconds(15))
+                    .until(driver -> driver.findElements(cardLocator).stream()
+                            .filter(this::isDisplayedSafely)
+                            .findFirst()
+                            .orElse(null));
+        } catch (TimeoutException exception) {
+            return null;
+        }
+    }
+
+    private boolean cartContainsItem(String itemName) {
+        CartPage cartPage = new CartPage(driver);
+        cartPage.open();
+        String cartText = normalize(cartPage.visibleTextSnapshot());
+        return cartPage.itemQuantity(itemName) > 0 || cartText.contains(normalize(itemName));
     }
 
     public boolean addFirstAvailableMenuItemToCart() {
@@ -116,6 +145,18 @@ public class CartCheckoutFlow {
         } catch (StaleElementReferenceException exception) {
             return false;
         }
+    }
+
+    private boolean isDisplayedSafely(WebElement element) {
+        try {
+            return element.isDisplayed();
+        } catch (StaleElementReferenceException exception) {
+            return false;
+        }
+    }
+
+    private static String normalize(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 
     public void openCheckoutWithCartItem() {

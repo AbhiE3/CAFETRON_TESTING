@@ -1,7 +1,10 @@
 package com.cafetron.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
+
+import java.util.Locale;
 
 public class VendorOrdersPage extends BasePage {
     private final By page = By.id("vendor-orders-page");
@@ -32,11 +35,35 @@ public class VendorOrdersPage extends BasePage {
         return isDisplayed(manageMenuLink) && isDisplayed(profileLink);
     }
 
+    public boolean waitForOrderVisible(String orderId, String itemName) {
+        String normalizedOrderId = normalize("order #" + orderId);
+        String normalizedItemName = normalize(itemName);
+        try {
+            wait.until(driver -> {
+                String visibleText = normalize(visibleTextSnapshot());
+                return visibleText.contains(normalizedOrderId)
+                        && visibleText.contains(normalizedItemName);
+            });
+            return true;
+        } catch (TimeoutException exception) {
+            return false;
+        }
+    }
+
+    public String visibleTextSnapshot() {
+        String text = getOptionalText(page).replaceAll("\\s+", " ").trim();
+        return text.length() > 700 ? text.substring(0, 700) + "..." : text;
+    }
+
     public boolean isBackToMenuVisible() {
         return isDisplayed(backToMenuLink);
     }
 
     public void clickBackToMenu() {
         click(backToMenuLink);
+    }
+
+    private static String normalize(String value) {
+        return value == null ? "" : value.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
     }
 }

@@ -3,14 +3,18 @@ package com.cafetron.pages;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.Select;
 
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CheckoutPage extends BasePage {
+    private static final Pattern ORDER_ID_PATTERN = Pattern.compile("/orders/(\\d+)(?:\\D.*)?$");
     private final By overviewViewButton = By.id("checkout-overview-view-btn");
     private final By cardsViewButton = By.id("checkout-cards-view-btn");
     private final By overviewLocationInput = By.id("checkout-overview-location-input");
@@ -124,6 +128,31 @@ public class CheckoutPage extends BasePage {
             return;
         }
         clickFirstDisplayedEnabled(finalPlaceOrderButton);
+    }
+
+    public boolean placeOrderAndWaitForConfirmation() {
+        placeOrder();
+        return waitForOrderConfirmation();
+    }
+
+    public boolean waitForOrderConfirmation() {
+        try {
+            wait.until(driver -> currentUrlContains("/orders/") && !visibleTextSnapshot()
+                    .toLowerCase(Locale.ROOT).contains("placing order"));
+            return true;
+        } catch (TimeoutException exception) {
+            return false;
+        }
+    }
+
+    public String confirmedOrderId() {
+        Matcher matcher = ORDER_ID_PATTERN.matcher(driver.getCurrentUrl());
+        return matcher.find() ? matcher.group(1) : "";
+    }
+
+    public String visibleTextSnapshot() {
+        String text = getOptionalText(By.tagName("body")).replaceAll("\\s+", " ").trim();
+        return text.length() > 500 ? text.substring(0, 500) + "..." : text;
     }
 
     public boolean hasFeedback() {
